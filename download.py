@@ -5,6 +5,7 @@ Github repo for RealWorldOccludedFaces: https://github.com/ekremerakin/RealWorld
 
 import os
 import io
+import json
 import pickle
 from tqdm import tqdm
 import requests
@@ -79,14 +80,26 @@ for filename in tqdm(os.listdir(image_src_dir)):
             cv2_image = np.array(img)
             face_box = face_info["box"]
             assert len(face_box) == 4
-            x, y, h, w = face_box
+            x, y, w, h = face_box
             # Avoid getting out of the image
-            face_img = cv2_image[y: np.min([y + w, cv2_image.shape[0] - 1]), x: np.min([x + h, cv2_image.shape[1] - 1])]
+            face_img = cv2_image[y: np.min([y + h, cv2_image.shape[0] - 1]), x: np.min([x + w, cv2_image.shape[1] - 1])]
             image = Image.fromarray(face_img)
 
             # Save as JPEG files
             with open(os.path.join(main_path, image_src_type, subject_name, f"{image_id.zfill(6)}.jpg"), "wb") as f:
                 image.save(f, "JPEG", quality=85)
+
+            # Re-compute the positions (eyes, noses, mouths)
+            for key, value in face_info.items():
+                if key == "box":
+                    face_info["box"] = [value[0] - x, value[1] - y, value[2], value[3]]
+                elif key == "confidence":
+                    face_info[key] = value
+                elif key == "keypoints":
+                    for subkey, subvalue in value.items():
+                        value[subkey] = [subvalue[0] - x, subvalue[1] - y]
+                else:
+                    face_info[key] = [value[0] - x, value[1] - y]
 
             # Save the face info
             face_box_data[f'{image_id.zfill(6)}'] = face_info
@@ -98,4 +111,6 @@ for filename in tqdm(os.listdir(image_src_dir)):
         except ValueError as e:
             pass
 
-    pickle.dump(face_box_data, open(os.path.join(main_path, image_src_type, subject_name, "face_box.pkl"), 'wb'))
+    a = 1
+    json.dump(face_box_data, open(os.path.join(main_path, image_src_type, subject_name, "face_box.json"), 'w', encoding='utf8'),
+              indent=4, ensure_ascii=False)
