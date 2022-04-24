@@ -29,7 +29,7 @@ for subject_name in tqdm(subject_name_list):
     subject_data_dir = os.path.join(neutral_dir, subject_name)
     image_name_list = [path for path in os.listdir(subject_data_dir) if path.endswith('.jpg')]
     # File containing box data (boudaries for eyes, noses, mouths, etc)
-    facebox_data = json.load(open(os.path.join(subject_data_dir, 'face_box-new.json'), 'r', encoding='utf8'))
+    facebox_data = json.load(open(os.path.join(subject_data_dir, 'face_box.json'), 'r', encoding='utf8'))
 
     for image_name in image_name_list:
         if image_name.endswith("-lower.jpg") or image_name.endswith("-upper.jpg"):
@@ -37,7 +37,8 @@ for subject_name in tqdm(subject_name_list):
         image_path = os.path.join(subject_data_dir, image_name)
         image_id = image_name[:-4]  # Get rid of ".jpg"
 
-        image = cv2.imread(image_path)
+        image = Image.open(image_path).convert('RGB')
+        image = np.array(image)
         box_info = facebox_data[image_id]
         size = box_info["box"]
         width, height = size[2], size[3]
@@ -81,5 +82,3 @@ for subject_name in tqdm(subject_name_list):
         pil_lower_occluded_image = Image.fromarray(lower_occluded_image)
         with open(os.path.join(subject_data_dir, f"{image_id}-lower.jpg"), "wb") as f:
             pil_lower_occluded_image.save(f, "JPEG", quality=85)
-
-
