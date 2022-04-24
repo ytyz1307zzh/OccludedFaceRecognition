@@ -12,9 +12,9 @@ import argparse
 
 from torchvision import transforms
 from torch.utils.data import DataLoader
-from dataset import Vggface
+from dataset import FaceDataset
 from resnet import ResNet
-from model import Baseline
+from model import Model
 
 
 def train():
@@ -22,6 +22,9 @@ def train():
     parser = argparse.ArgumentParser()
     parser.add_argument('-data_dir', default='./split')
     parser.add_argument('-save_dir', default='./weights')
+    parser.add_argument('-lr', default=0.0001, type=float, help="learning rate")
+    parser.add_argument('-epochs', default=10, type=int, help='training epochs')
+    parser.add_argument('-batch', default=16, type=int, help="batch size")
     args = parser.parse_args()
 
     transform = transforms.Compose([
@@ -31,12 +34,12 @@ def train():
     ])
 
     # Load training data 
-    train_ds = Vggface(os.path.join(args.data_dir, "train.txt"), transform=transform)
-    train_dl = DataLoader(train_ds, batch_size=16, num_workers=2, shuffle=True, drop_last=False)
+    train_ds = FaceDataset(os.path.join(args.data_dir, "train.txt"), transform=transform)
+    train_dl = DataLoader(train_ds, batch_size=args.batch, num_workers=0, shuffle=True, drop_last=False)
 
     # Load validating data
-    validate_ds = Vggface(os.path.join(args.data_dir, "validate.txt"), transform=transform)
-    validate_dl = DataLoader(validate_ds, batch_size=16, num_workers=2, shuffle=False, drop_last=False)
+    validate_ds = FaceDataset(os.path.join(args.data_dir, "validate.txt"), transform=transform)
+    validate_dl = DataLoader(validate_ds, batch_size=args.batch, num_workers=0, shuffle=False, drop_last=False)
 
     # Set loss function
     criterion = torch.nn.CrossEntropyLoss()
@@ -44,7 +47,7 @@ def train():
     subject2class = train_ds.subject2class
     num_classes = len(subject2class)
     # Model 
-    model = Baseline(num_classes=num_classes, strict=False, verbose=True)
+    model = Model(num_classes=num_classes, strict=False, verbose=True)
     # Device
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # if torch.cuda.device_count() > 1:
@@ -53,13 +56,13 @@ def train():
 
     model.to(device).train()
 
-    optim = torch.optim.Adam(model.parameters(), lr=0.0001)
+    optim = torch.optim.Adam(model.parameters(), lr=args.lr)
 
     os.makedirs(args.save_dir, exist_ok=True)
 
     running_error = []
     val_acc = None
-    for epoch in range(10):
+    for epoch in range(args.epochs):
         model.train()
         
         for batch_num, (img, gt) in enumerate(train_dl):

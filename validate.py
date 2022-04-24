@@ -1,5 +1,6 @@
 from tqdm import tqdm
 import torch
+import os
 from time import time
 import torch.nn.functional as F
 import argparse
@@ -8,12 +9,19 @@ import argparse
 
 from torchvision import transforms
 from torch.utils.data import DataLoader
-from dataset import Vggface
+from dataset import FaceDataset
 from resnet import ResNet
-from model import Baseline
+from model import Model
 
 
-def validate(img_list_path="validate.txt"):
+def validate():
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-data_dir', default="./split")
+    parser.add_argument('-checkpoint', default="./weights/9.pth", help="Which checkpoint to load")
+    parser.add_argument('-batch', default=16, type=int, help='batch size')
+    args = parser.parse_args()
+
     transform = transforms.Compose([
         transforms.ToTensor(),
         #transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -21,16 +29,15 @@ def validate(img_list_path="validate.txt"):
     ])
 
     # Load validating data
-    validate_ds = Vggface(img_list_path, transform=transform)
-    validate_dl = DataLoader(validate_ds, batch_size=16, num_workers=2, shuffle=False, drop_last=False)
+    validate_ds = FaceDataset(os.path.join(args.data_dir, "validate.txt"), transform=transform)
+    validate_dl = DataLoader(validate_ds, batch_size=args.batch, num_workers=0, shuffle=False, drop_last=False)
 
     # Model 
-    model = torch.load("weights/9.pth")
+    model = torch.load(args.checkpoint)
     # Device
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     model.to(device).eval()
-
 
     correct = 0
     with torch.no_grad():
@@ -48,5 +55,4 @@ def validate(img_list_path="validate.txt"):
          
 
 if __name__ == '__main__':
-    import sys
-    validate(sys.argv[1])
+    validate()

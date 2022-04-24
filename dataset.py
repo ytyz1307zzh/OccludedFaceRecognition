@@ -6,7 +6,7 @@ def get_subject(img_path):
     return img_path.split("/")[-2]
 
 
-class Vggface:
+class FaceDataset:
     def __init__(self, img_list_path='./image_dir', transform=None):
         self.img_list = []
         with open(img_list_path) as f:

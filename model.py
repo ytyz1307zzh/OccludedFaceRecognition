@@ -1,9 +1,10 @@
 from resnet import ResNet
 
-class Baseline(ResNet):
+
+class Model(ResNet):
 
     def __init__(self, **kwargs):
-        super(Baseline, self).__init__(**kwargs)
+        super(Model, self).__init__(**kwargs)
 
     def predict(self, x):
         x = self.conv1(x)
