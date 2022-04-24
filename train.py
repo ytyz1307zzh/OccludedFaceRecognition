@@ -16,12 +16,14 @@ from dataset import Vggface
 from resnet import ResNet
 from model import Baseline
 
-#from pytorchtools import EarlyStopping
-
-save_dir = "weights"
-
 
 def train():
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-data_dir', default='./split')
+    parser.add_argument('-save_dir', default='./weights')
+    args = parser.parse_args()
+
     transform = transforms.Compose([
         transforms.ToTensor(),
         #transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -29,11 +31,11 @@ def train():
     ])
 
     # Load training data 
-    train_ds = Vggface("train.txt", transform=transform)
+    train_ds = Vggface(os.path.join(args.data_dir, "train.txt"), transform=transform)
     train_dl = DataLoader(train_ds, batch_size=16, num_workers=2, shuffle=True, drop_last=False)
 
     # Load validating data
-    validate_ds = Vggface("validate.txt", transform=transform)
+    validate_ds = Vggface(os.path.join(args.data_dir, "validate.txt"), transform=transform)
     validate_dl = DataLoader(validate_ds, batch_size=16, num_workers=2, shuffle=False, drop_last=False)
 
     # Set loss function
@@ -45,17 +47,15 @@ def train():
     model = Baseline(num_classes=num_classes, strict=False, verbose=True)
     # Device
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    #if torch.cuda.device_count() > 1:
+    # if torch.cuda.device_count() > 1:
     #    print(f"Model will use {torch.cuda.device_count()} GPUs!")
     #    model = torch.nn.DataParallel(model)
 
-
     model.to(device).train()
-
 
     optim = torch.optim.Adam(model.parameters(), lr=0.0001)
 
-    os.makedirs(save_dir, exist_ok=True)
+    os.makedirs(args.save_dir, exist_ok=True)
 
     running_error = []
     val_acc = None
@@ -76,12 +76,13 @@ def train():
             
             running_error.append(float(loss.cpu().data.numpy()))
             running_error_display = np.mean(running_error[-100:])
-            desc = 'Epoch: {} Batch: {} Training Loss: {} Validation Accuracy: {}'.format(epoch, batch_num, running_error_display, val_acc)
+            desc = 'Epoch: {} Batch: {} Training Loss: {} Validation Accuracy: {}'.format(
+                epoch, batch_num, running_error_display, val_acc
+            )
             print(desc)
-            
 
         # Save model
-        save_path = os.path.join(save_dir, '{}.pth'.format(epoch))
+        save_path = os.path.join(args.save_dir, '{}.pth'.format(epoch))
         torch.save(model, save_path)
 
         model.eval()
