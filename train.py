@@ -29,8 +29,6 @@ def train():
     parser.add_argument('-valid_data', default='./split/validate.txt')
     parser.add_argument('-subject2class', default='./split/subject2class.json',
                         help="the mapping from subject names to class labels")
-    parser.add_argument('-train_from_scratch', default=False, action='store_true',
-                        help='if `True`, then train from scratch and ignore the pretrained resnet model')
     parser.add_argument('-resnet', default='./resnet18_weights.pkl', help='pretrained resnet18 model')
     parser.add_argument('-save_dir', default='./weights')
     parser.add_argument('-lr', default=0.0001, type=float, help="learning rate")
@@ -61,14 +59,7 @@ def train():
     subject2class = train_ds.subject2class
     num_classes = len(subject2class)
     # Model 
-    model = torchvision.models.resnet18(pretrained=False, num_classes=num_classes)
-    if not args.train_from_scratch:
-        state_dict = pickle.load(open(args.resnet, 'rb'))
-        state_dict.pop('fc.weight')
-        state_dict.pop('fc.bias')
-        for key, value in state_dict.items():
-            state_dict[key] = torch.tensor(value)
-        model.load_state_dict(state_dict, strict=False)
+    model = Model(num_classes=num_classes, pth="resnet18_weights.pth", strict=False, verbose=True)
     # Device
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # if torch.cuda.device_count() > 1:
