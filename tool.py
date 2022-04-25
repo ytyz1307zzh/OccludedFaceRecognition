@@ -103,13 +103,13 @@ def tool(args):
     plt.ylabel("Relative Frequency")
     plt.xlabel("Match Scores")
 
-    plot_path = os.path.join(os.path.split(args.data)[1].split(".")[0]+".png")
-    plt.savefig(plot_path, dpi=150)
+    plt.savefig(args.output, dpi=150)
          
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-data', default='./split/validate.txt')
 parser.add_argument('-subject2class', default='./split/subject2class.json')
 parser.add_argument('-checkpoint', default='./weights/best.pth')
+parser.add_argument('-output', default='./validate.png')
 args = parser.parse_args()
 tool(args)
