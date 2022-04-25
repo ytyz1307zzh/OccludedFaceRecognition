@@ -31,7 +31,7 @@ def train():
                         help="the mapping from subject names to class labels")
     parser.add_argument('-train_from_scratch', default=False, action='store_true',
                         help='if `True`, then train from scratch and ignore the pretrained resnet model')
-    parser.add_argument('-resnet', default='./resnet18_weights.pth', help='pretrained resnet18 model')
+    parser.add_argument('-resnet', default='./resnet50_weights.pkl', help='pretrained resnet18 model')
     parser.add_argument('-save_dir', default='./weights')
     parser.add_argument('-lr', default=0.0001, type=float, help="learning rate")
     parser.add_argument('-epochs', default=10, type=int, help='training epochs')
@@ -61,7 +61,7 @@ def train():
     subject2class = train_ds.subject2class
     num_classes = len(subject2class)
     # Model 
-    model = torchvision.models.resnet18(pretrained=False, num_classes=num_classes)
+    model = torchvision.models.resnet50(pretrained=False, num_classes=num_classes)
     if not args.train_from_scratch:
         state_dict = pickle.load(open(args.resnet, 'rb'))
         state_dict.pop('fc.weight')
