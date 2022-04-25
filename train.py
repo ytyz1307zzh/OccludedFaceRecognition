@@ -29,7 +29,7 @@ def train():
     parser.add_argument('-valid_data', default='./split/validate.txt')
     parser.add_argument('-subject2class', default='./split/subject2class.json',
                         help="the mapping from subject names to class labels")
-    parser.add_argument('-resnet', default='./resnet18_weights.pkl', help='pretrained resnet18 model')
+    parser.add_argument('-resnet', default='./resnet18_weights.pth', help='pretrained resnet18 model')
     parser.add_argument('-save_dir', default='./weights')
     parser.add_argument('-lr', default=0.0001, type=float, help="learning rate")
     parser.add_argument('-epochs', default=10, type=int, help='training epochs')
@@ -59,7 +59,7 @@ def train():
     subject2class = train_ds.subject2class
     num_classes = len(subject2class)
     # Model 
-    model = Model(num_classes=num_classes, pth="resnet18_weights.pth", strict=False, verbose=True)
+    model = Model(num_classes=num_classes, pth=args.resnet, strict=False, verbose=True)
     # Device
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # if torch.cuda.device_count() > 1:
