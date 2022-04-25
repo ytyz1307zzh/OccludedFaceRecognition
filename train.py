@@ -1,5 +1,9 @@
+import pdb
 from getopt import gnu_getopt
 import itertools
+
+import torchvision.models
+import pickle
 from tqdm import tqdm
 import torch
 import numpy as np
@@ -25,6 +29,7 @@ def train():
     parser.add_argument('-lr', default=0.0001, type=float, help="learning rate")
     parser.add_argument('-epochs', default=10, type=int, help='training epochs')
     parser.add_argument('-batch', default=16, type=int, help="batch size")
+    parser.add_argument('-wait_steps', default=5, type=int, help="early stopping wait steps")
     args = parser.parse_args()
 
     transform = transforms.Compose([
@@ -47,7 +52,13 @@ def train():
     subject2class = train_ds.subject2class
     num_classes = len(subject2class)
     # Model 
-    model = Model(num_classes=num_classes, strict=False, verbose=True)
+    model = torchvision.models.resnet50(pretrained=False, num_classes=num_classes)
+    state_dict = pickle.load(open('resnet50_ft_weight.pkl', 'rb'))
+    state_dict.pop('fc.weight')
+    state_dict.pop('fc.bias')
+    for key, value in state_dict.items():
+        state_dict[key] = torch.tensor(value)
+    model.load_state_dict(state_dict, strict=False)
     # Device
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # if torch.cuda.device_count() > 1:
@@ -61,8 +72,12 @@ def train():
     os.makedirs(args.save_dir, exist_ok=True)
 
     running_error = []
-    val_acc = None
-    for epoch in range(args.epochs):
+    first_batch = True
+    best_acc = -1
+    wait_steps = 0
+    best_epoch = None
+
+    for epoch in tqdm(range(args.epochs), desc="Training"):
         model.train()
         
         for batch_num, (img, gt) in enumerate(train_dl):
@@ -78,15 +93,11 @@ def train():
             optim.step()
             
             running_error.append(float(loss.cpu().data.numpy()))
-            running_error_display = np.mean(running_error[-100:])
-            desc = 'Epoch: {} Batch: {} Training Loss: {} Validation Accuracy: {}'.format(
-                epoch, batch_num, running_error_display, val_acc
-            )
-            print(desc)
-
-        # Save model
-        save_path = os.path.join(args.save_dir, '{}.pth'.format(epoch))
-        torch.save(model, save_path)
+            # running_error_display = np.mean(running_error[-100:])
+            if first_batch:
+                desc = f'Epoch: 0 Training Loss: {loss.item()}'
+                print(desc)
+                first_batch = False
 
         model.eval()
         valid_losses = []
@@ -100,12 +111,29 @@ def train():
                 valid_losses.append(float(loss.cpu().data.numpy()))
 
                 pred = torch.argmax(y, dim=1)
-                correct += torch.sum(torch.tensor(pred) == torch.tensor(gt))
+                correct += torch.sum(pred == gt)
 
         val_acc = correct / len(validate_ds)
 
-        desc = 'Epoch: {} Validation Loss: {} Validation Accuracy: {}'.format(epoch, np.mean(valid_losses), val_acc)
+        desc = f'Epoch: {epoch + 1} Train Loss: {np.mean(running_error)} Validation Loss: {np.mean(valid_losses)} ' \
+               f'Validation Accuracy: {val_acc * 100:.2f}%'
         print(desc)
+        running_error.clear()
+
+        if val_acc > best_acc:
+            best_acc = val_acc
+            best_epoch = epoch + 1
+            print(f'New best accuracy: {best_acc * 100:.2f}%')
+            # Save the best model checkpoint
+            save_path = os.path.join(args.save_dir, 'best.pth')
+            torch.save(model, save_path)
+            wait_steps = 0
+        else:
+            wait_steps += 1
+            print(f'Did not beat best accuracy! Current: {val_acc * 100:.2f}% Best: {best_acc * 100:.2f}%')
+            if wait_steps == args.wait_steps:
+                print(f'Early stopping! Best accuracy: {best_acc * 100:.2f}% at epoch {best_epoch}')
+                break
          
 
 if __name__ == '__main__':
