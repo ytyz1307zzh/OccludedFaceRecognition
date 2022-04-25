@@ -17,7 +17,7 @@ def validate():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-test_data', default="./split/test_mask.txt")
-    parser.add_argument('-subject2class', defualt='./split/subject2class.json')
+    parser.add_argument('-subject2class', default='./split/subject2class.json')
     parser.add_argument('-checkpoint', default="./weights/best.pth", help="Which checkpoint to load")
     parser.add_argument('-batch', default=16, type=int, help='batch size')
     args = parser.parse_args()
