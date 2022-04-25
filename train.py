@@ -24,7 +24,8 @@ from model import Model
 def train():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-data_dir', default='./split')
+    parser.add_argument('-train_data', default='./split/train.txt')
+    parser.add_argument('-valid_data', default='./split/validate.txt')
     parser.add_argument('-save_dir', default='./weights')
     parser.add_argument('-lr', default=0.0001, type=float, help="learning rate")
     parser.add_argument('-epochs', default=10, type=int, help='training epochs')
@@ -39,11 +40,11 @@ def train():
     ])
 
     # Load training data 
-    train_ds = FaceDataset(os.path.join(args.data_dir, "train.txt"), transform=transform)
+    train_ds = FaceDataset(args.train_data, transform=transform)
     train_dl = DataLoader(train_ds, batch_size=args.batch, num_workers=0, shuffle=True, drop_last=False)
 
     # Load validating data
-    validate_ds = FaceDataset(os.path.join(args.data_dir, "validate.txt"), transform=transform)
+    validate_ds = FaceDataset(args.valid_data, transform=transform)
     validate_dl = DataLoader(validate_ds, batch_size=args.batch, num_workers=0, shuffle=False, drop_last=False)
 
     # Set loss function

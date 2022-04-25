@@ -17,8 +17,8 @@ from model import Model
 def validate():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-data_dir', default="./split")
-    parser.add_argument('-checkpoint', default="./weights/9.pth", help="Which checkpoint to load")
+    parser.add_argument('-test_data', default="./split/test_mask.txt")
+    parser.add_argument('-checkpoint', default="./weights/best.pth", help="Which checkpoint to load")
     parser.add_argument('-batch', default=16, type=int, help='batch size')
     args = parser.parse_args()
 
@@ -29,7 +29,7 @@ def validate():
     ])
 
     # Load validating data
-    validate_ds = FaceDataset(os.path.join(args.data_dir, "validate.txt"), transform=transform)
+    validate_ds = FaceDataset(args.test_data, transform=transform)
     validate_dl = DataLoader(validate_ds, batch_size=args.batch, num_workers=0, shuffle=False, drop_last=False)
 
     # Model 
@@ -48,10 +48,10 @@ def validate():
             #print(img)
             y = model(img)
             pred = torch.argmax(y, dim=1)
-            correct += torch.sum(torch.tensor(pred) == torch.tensor(gt)).item()
+            correct += torch.sum(pred == gt).item()
 
     val_acc = correct / len(validate_ds)
-    print(val_acc)
+    print(f"{val_acc * 100:.2f}%")
          
 
 if __name__ == '__main__':
