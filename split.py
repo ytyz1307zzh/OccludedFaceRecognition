@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import re
 
@@ -13,6 +14,7 @@ mask_dir = os.path.join(args.data_dir, "masked")
 
 subject_list = os.listdir(neutral_dir)
 subject2numtrain = {}  # Record the number of training examples for each subject
+subject2class = {}
 train_list = []
 valid_list = []
 train_aug_list = []
@@ -36,6 +38,7 @@ for subject_name in subject_list:
 
     num_train = round(len(original_images) * 0.8)
     subject2numtrain[subject_name] = num_train
+    subject2class[subject_name] = len(subject2class)
     train_list.extend(original_images[:num_train])
     valid_list.extend(original_images[num_train:])
 
@@ -94,6 +97,7 @@ save_file(os.path.join(args.output_dir, "train_aug.txt"), train_aug_list)
 save_file(os.path.join(args.output_dir, "validate.txt"), valid_list)
 save_file(os.path.join(args.output_dir, "test_mask.txt"), test_mask_list)
 save_file(os.path.join(args.output_dir, "test_sunglass.txt"), test_sunglass_list)
+json.dump(subject2class, open(os.path.join(args.output_dir, "subject2class.json"), 'w', encoding='utf8'), indent=4, ensure_ascii=False)
 print(f'Training data: {len(train_list)}')
 print(f'Augmented training data: {len(train_aug_list)}')
 print(f'Validation data: {len(valid_list)}')

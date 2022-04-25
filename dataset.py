@@ -7,18 +7,13 @@ def get_subject(img_path):
 
 
 class FaceDataset:
-    def __init__(self, img_list_path='./image_dir', transform=None):
+    def __init__(self, img_list_path, subject2class, transform=None):
         self.img_list = []
         with open(img_list_path) as f:
             for line in f:
                 self.img_list.append(line.strip())
 
-        self.subject2class = {}
-        for img_path in self.img_list:
-            subject = get_subject(img_path)
-            if subject not in self.subject2class:
-                self.subject2class[subject] = len(self.subject2class)
-
+        self.subject2class = subject2class
         self.transform = transform
 
 

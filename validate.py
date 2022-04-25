@@ -10,14 +10,14 @@ import argparse
 from torchvision import transforms
 from torch.utils.data import DataLoader
 from dataset import FaceDataset
-from resnet import ResNet
-from model import Model
+import json
 
 
 def validate():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-test_data', default="./split/test_mask.txt")
+    parser.add_argument('-subject2class', defualt='./split/subject2class.json')
     parser.add_argument('-checkpoint', default="./weights/best.pth", help="Which checkpoint to load")
     parser.add_argument('-batch', default=16, type=int, help='batch size')
     args = parser.parse_args()
@@ -28,8 +28,10 @@ def validate():
                                 #std=[0.229, 0.224, 0.225])
     ])
 
+    subject2class = json.load(open(args.subject2class, 'r', encoding='utf8'))
+
     # Load validating data
-    validate_ds = FaceDataset(args.test_data, transform=transform)
+    validate_ds = FaceDataset(args.test_data, subject2class=subject2class, transform=transform)
     validate_dl = DataLoader(validate_ds, batch_size=args.batch, num_workers=0, shuffle=False, drop_last=False)
 
     # Model 
