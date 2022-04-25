@@ -27,7 +27,7 @@ def train():
     parser = argparse.ArgumentParser()
     parser.add_argument('-train_data', default='./split/train.txt')
     parser.add_argument('-valid_data', default='./split/validate.txt')
-    parser.add_argument('-subject2class', defualt='./split/subject2class.json',
+    parser.add_argument('-subject2class', default='./split/subject2class.json',
                         help="the mapping from subject names to class labels")
     parser.add_argument('-train_from_scratch', default=False, action='store_true',
                         help='if `True`, then train from scratch and ignore the pretrained resnet model')
