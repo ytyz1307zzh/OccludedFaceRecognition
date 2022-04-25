@@ -1,5 +1,6 @@
 from tqdm import tqdm
 import torch
+import json
 from time import time
 import numpy as np
 import torch.nn.functional as F
@@ -42,8 +43,10 @@ def tool(args):
                                 #std=[0.229, 0.224, 0.225])
     ])
 
+    subject2class = json.load(open(args.subject2class, 'r', encoding='utf8'))
+
     # Load validating data
-    validate_ds = FaceDataset(args.data, transform=transform)
+    validate_ds = FaceDataset(args.data, subject2class=subject2class, transform=transform)
     validate_dl = DataLoader(validate_ds, batch_size=16, num_workers=0, shuffle=False, drop_last=False)
 
     # Model 
@@ -106,6 +109,7 @@ def tool(args):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-data', default='./split/validate.txt')
+parser.add_argument('-subject2class', default='./split/subject2class.json')
 parser.add_argument('-checkpoint', default='./weights/best.pth')
 args = parser.parse_args()
 tool(args)
