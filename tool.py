@@ -9,14 +9,16 @@ import argparse
 
 from torchvision import transforms
 from torch.utils.data import DataLoader
-from dataset import Vggface
+from dataset import FaceDataset
 from resnet import ResNet
-from model import Baseline
+from model import Model
 import matplotlib.pyplot as plt
 import os
 
+
 def cos_similarity(a, b):
     return np.dot(a, b)/(np.linalg.norm(a)*np.linalg.norm(b))
+
 
 def match(feature, labels):
     authentic = []
@@ -32,7 +34,8 @@ def match(feature, labels):
 
     return authentic, impostor
 
-def tool(img_list_path="validate.txt"):
+
+def tool(args):
     transform = transforms.Compose([
         transforms.ToTensor(),
         #transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -40,11 +43,11 @@ def tool(img_list_path="validate.txt"):
     ])
 
     # Load validating data
-    validate_ds = Vggface(img_list_path, transform=transform)
-    validate_dl = DataLoader(validate_ds, batch_size=16, num_workers=2, shuffle=False, drop_last=False)
+    validate_ds = FaceDataset(args.data, transform=transform)
+    validate_dl = DataLoader(validate_ds, batch_size=16, num_workers=0, shuffle=False, drop_last=False)
 
     # Model 
-    model = torch.load("weights/9.pth")
+    model = torch.load(args.checkpoint)
     # Device
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -97,10 +100,12 @@ def tool(img_list_path="validate.txt"):
     plt.ylabel("Relative Frequency")
     plt.xlabel("Match Scores")
 
-    plot_path = os.path.join(os.path.split(img_list_path)[1].split(".")[0]+".png")
+    plot_path = os.path.join(os.path.split(args.data)[1].split(".")[0]+".png")
     plt.savefig(plot_path, dpi=150)
          
 
-if __name__ == '__main__':
-    import sys
-    tool(sys.argv[1])
+parser = argparse.ArgumentParser()
+parser.add_argument('-data', default='./split/validate.txt')
+parser.add_argument('-checkpoint', default='./weights/best.pth')
+args = parser.parse_args()
+tool(args)
